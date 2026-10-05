@@ -17,11 +17,19 @@ behind one `ASRBackend` interface with three implementations:
 
 ```bash
 brew install ffmpeg
-python3.11 -m venv .venv && source .venv/bin/activate
-pip install -r requirements-mac.txt          # shared deps + mlx-audio
+uv venv --python 3.11 && source .venv/bin/activate
+uv pip install -r requirements-mac.txt      # shared deps + mlx-audio
 
-ASR_BACKEND=mlx uvicorn app.main:app --host 0.0.0.0 --port 8000
+ASR_BACKEND=mlx python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+# or, without activating the venv:
+ASR_BACKEND=mlx uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
+
+`uv venv` is used instead of `python -m venv` because the latter can fail in
+`ensurepip` on Homebrew Pythons. Launch with `python -m uvicorn` or `uv run uvicorn`
+rather than a bare `uvicorn`: a `uvicorn` executable from another Python on your
+`PATH` will not see the dependencies installed in `.venv` and fails with
+`ModuleNotFoundError: No module named 'fastapi'`.
 
 The first `mlx` start downloads the weights from Hugging Face; later starts load
 them from the local cache. `GET /health` returns `503` until loading is done.
@@ -74,8 +82,8 @@ Each returned segment is at most `MAX_CHUNK_S + 2 × PAD_S` long.
 ## Tests
 
 ```bash
-pip install -r requirements.txt
-pytest                      # ASR_BACKEND=fake is set by tests/conftest.py
+uv pip install -r requirements-mac.txt   # or requirements.txt on Linux
+python -m pytest            # ASR_BACKEND=fake is set by tests/conftest.py
 ```
 
 Put `samples/short.ogg` (~10 s) and `samples/long.ogg` (5+ min) of Darija speech in
